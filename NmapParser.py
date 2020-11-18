@@ -6,7 +6,7 @@ from xml.etree import ElementTree as Et
 import sys
 import xlsxwriter
 
-headerResult = ["IP", "Hostname", "Protocol", "Port", "Open", "Version"]
+headerResult = ["IP", "Hostname", "Protocol", "Port", "Open", "Protocol name", "Protocol product"]
 resultList = []
 resultList.append(headerResult)
 headerHosts = ["IP", "Hostname"]
@@ -22,10 +22,6 @@ for argument in sys.argv[1:]:
         if (status["state"]) == "up":
             address = host.find("address").attrib["addr"]
             hostname = None
-            protocol = None
-            portId = None
-            state = None
-            version = None
             for hostNames in host.find("hostnames"):
                 if "name" in hostNames.attrib:
                     hostname = hostNames.attrib["name"]
@@ -34,19 +30,23 @@ for argument in sys.argv[1:]:
             for ports in host.findall("ports"):
                 # For host element and port sub element without any ports
                 if not ports.findall("port"):
-                    result = (address, hostname, protocol, portId, state, version)
+                    result = (address, hostname, None, None, None, None, None)
                     resultList.append(result)
                 # For host element and port sub element with ports
                 else:
                     for port in ports.findall("port"):
                         protocol = port.attrib["protocol"]
                         portId = port.attrib["portid"]
+                        state = None
+                        protocolName = None
+                        protocolProduct = None
                         for filtered in port.findall("state"):
                             state = filtered.attrib["state"]
-                        for name in port.findall("service"):
-                            if "product" in name.attrib:
-                                version = name.attrib["product"]
-                        result = (address, hostname, protocol, portId, state, version)
+                        for service in port.findall("service"):
+                            protocolName = service.attrib["name"]
+                            if "product" in service.attrib:
+                                protocolProduct = service.attrib["product"]
+                        result = (address, hostname, protocol, portId, state, protocolName, protocolProduct)
                         resultList.append(result)
         if (status["state"]) == "down":
             address = host.find("address").attrib["addr"]

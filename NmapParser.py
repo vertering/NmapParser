@@ -16,29 +16,27 @@ class NmapParser:
         parser = argparse.ArgumentParser(description=description)
         parser.add_argument('-files', help='XML files from Nmap', nargs='*')
         self.args = parser.parse_args()
-        self.header_result = ['IP', 'Hostname', 'Protocol', 'Port', 'Open', 'Protocol name', 'Protocol product']
+        self.header_result = ('IP', 'Hostname', 'Protocol', 'Port', 'Open', 'Protocol name', 'Protocol product')
         self.result_list = []
         self.result_list.append(self.header_result)
-        self.headerHosts = ['IP', 'Hostname']
+        self.headerHosts = ('IP', 'Hostname')
         self.up_hosts = []
         self.up_hosts.append(self.headerHosts)
         self.down_hosts = []
         self.down_hosts.append(self.headerHosts)
 
+    # TODO: Class object for results
     def parse(self):
         file_list = []
         if self.args.files is not None:
             for file in self.args.files:
-                print(file)
                 if type(glob.glob(file)) is list:
-                    print('list')
                     for item in glob.glob(file):
-                        print(item)
-                        file_list.append(item)
+                        if item.lower().endswith('.xml'):
+                            file_list.append(item)
                 if type(glob.glob(file)) is str:
-                    print('file')
-                    print(file)
-                    file_list.append(file)
+                    if file.lower().endswith('.xml'):
+                        file_list.append(file)
             for file in file_list:
                 tree = et.parse(file)
                 root = tree.getroot()
@@ -50,12 +48,12 @@ class NmapParser:
                         for host_names in host.find('hostnames'):
                             if 'name' in host_names.attrib:
                                 hostname = host_names.attrib['name']
-                        upHost = (address, hostname)
-                        self.up_hosts.append(upHost)
+                        up_host = (address, hostname)
+                        self.up_hosts.append(up_host)
                         for ports in host.findall('ports'):
                             # For host element and port sub element without any ports
                             if not ports.findall('port'):
-                                result = (address, hostname, None, None, None, None, None)
+                                result = (address, hostname, '', '', '', '','')
                                 self.result_list.append(result)
                             # For host element and port sub element with ports
                             else:
@@ -87,20 +85,20 @@ class NmapParser:
     def write_excel(self):
         workbook = xlsxwriter.Workbook('NmapParser.xlsx')
         worksheet = workbook.add_worksheet('Results')
-        rowNumber = 3
+        row_number = 3
         for result in self.result_list:
-            worksheet.write_row('C' + str(rowNumber), result)
-            rowNumber += 1
+            worksheet.write_row('C' + str(row_number), result)
+            row_number += 1
         worksheet = workbook.add_worksheet('Hosts up')
-        rowNumber = 3
+        row_number = 3
         for result in self.up_hosts:
-            worksheet.write_row('C' + str(rowNumber), result)
-            rowNumber += 1
+            worksheet.write_row('C' + str(row_number), result)
+            row_number += 1
         worksheet = workbook.add_worksheet('Hosts down')
-        rowNumber = 3
+        row_number = 3
         for result in self.down_hosts:
-            worksheet.write_row('C' + str(rowNumber), result)
-            rowNumber += 1
+            worksheet.write_row('C' + str(row_number), result)
+            row_number += 1
         workbook.close()
 
 
